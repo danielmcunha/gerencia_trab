@@ -17,6 +17,8 @@ numInterfaces = int(session.get('ifNumber.0').value)
 """
 def plot_chart(i):
     dataArray = data_set.split('\n')
+    print(data_set)
+
     xar = []
     yar = []
     for eachLine in dataArray:
@@ -35,9 +37,9 @@ def plot_chart(i):
 
 """
 def update_in_data_set(interface, bytes_in):
-	global data_set;
-	data_set += str(elapsed_time) + ',' + str(bytes_in) + '\n'
-	time.sleep(1)
+    global data_set;
+    data_set += str(elapsed_time) + ',' + str(bytes_in) + '\n'
+
 
 """
 
@@ -45,29 +47,25 @@ def update_in_data_set(interface, bytes_in):
 
 """
 def analyze_interfaces():
-    # Fazendo uma requisicao bulk com dois contadores in/out das interfaces de uma vez (repetindo conforme a quantidade de interfaces), isso vai retornar numInterfaces*2 objetos
-    countBulk = session.get_bulk(['ifInOctets', 'ifOutOctets'], 0, numInterfaces)
-    
-    update_in_data_set(0, countBulk[0].value)
+    while True:
+        # Fazendo uma requisicao bulk com dois contadores in/out das interfaces de uma vez (repetindo conforme a quantidade de interfaces), isso vai retornar numInterfaces*2 objetos
+        countBulk = session.get_bulk(['ifInOctets', 'ifOutOctets'], 0, numInterfaces)
+        global elapsed_time
+        update_in_data_set(0, countBulk[0].value)
+        time.sleep(1)
+        elapsed_time += 1
 
 """
 
     Main
 
 """
+
+elapsed_time = 0
+t = threading.Thread(target=analyze_interfaces)
+t.start()
+
 fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
-ani = animation.FuncAnimation(fig, plot_chart(0), interval = 1000)
+ani = animation.FuncAnimation(fig, plot_chart, interval = 1000)
 plt.show()
-
-while True:
-    analyze_interfaces()
-    time.sleep(1)
-    elapsed_time += 1
-
-
-    
-    
-
-
-
