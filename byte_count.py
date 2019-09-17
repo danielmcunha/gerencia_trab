@@ -1,25 +1,74 @@
+from Tkinter import *
 from easysnmp import Session
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.ticker import FuncFormatter
 import time
 import threading
 
-
 data_set1 = ''
 data_set2 = ''
+session = {}
+numInterfaces = 0
 tx_down_set = {}
 tx_upld_set = {}
-total_down = 0;
-total_upld = 0;
+totais = [0,0]
+plotclosed = False
 
-session = Session(hostname='192.168.43.161', version=3, security_level='auth_with_privacy', security_username='MD5DESUser', auth_protocol='MD5', auth_password='senhasenhasenha', privacy_protocol='DES', privacy_password='senhasenhasenha')
-numInterfaces = int(session.get('ifNumber.0').value)
+def handle_close(evt):
+    global plotclosed
+    plotclosed = True
 
-"""
+def megabytes(x, pos):
+    return str(x/1000000) + ' MB'
 
-    Plota grafico
+def analyze_interfaces():
+    countBulk1 = session.get_bulk(['ifInOctets', 'ifOutOctets'], 0, numInterfaces);
+    bytesIn1 = 0;
+    bytesOut1 = 0;
+    for i in range(0,len(countBulk1),2):
+        bytesIn1 += int(countBulk1[i].value)
+        bytesOut1 += int(countBulk1[i+1].value)
+    time.sleep(1)
+    global plotclosed
+    while True:
+        if plotclosed:
+          break
+        countBulk2 = session.get_bulk(['ifInOctets', 'ifOutOctets'], 0, numInterfaces)
+        bytesIn2 = 0;
+        bytesOut2 = 0;
+        for i in range(0,len(countBulk2),2):
+            bytesIn2 += int(countBulk2[i].value)
+            bytesOut2 += int(countBulk2[i+1].value)
+        global elapsed_time
+        tx_download = bytesIn2 - bytesIn1
+        tx_upload = bytesOut2 - bytesOut1
+        totais[0] = bytesIn2;
+        totais[1] = bytesOut2;
+        update_in_data_set(tx_download, tx_upload)
+        bytesIn1 = bytesIn2
+        bytesOut1 = bytesOut2
+        time.sleep(1)
 
-"""
+def update_in_data_set(tx_download, tx_upload):
+    global data_set1
+    global data_set2
+    num_points = len(tx_down_set)
+    if num_points == 60:
+        for i in range(1,num_points-1,1):
+            tx_down_set[i] = tx_down_set[i+1]
+            tx_upld_set[i] = tx_upld_set[i+1]
+        tx_down_set[len(tx_down_set)-1] = tx_download
+        tx_upld_set[len(tx_upld_set)-1] = tx_upload
+    else:
+        tx_down_set[len(tx_down_set)+1] = tx_download
+        tx_upld_set[len(tx_upld_set)+1] = tx_upload
+    data_set1 = ''
+    data_set2 = ''
+    for i in range(1,num_points,1):
+        data_set1 += str(i) + ',' + str(tx_down_set[i]) + '\n'
+        data_set2 += str(i) + ',' + str(tx_upld_set[i]) + '\n'
+
 def plot_chart(i):
     dataArray1 = data_set1.split('\n')
     dataArray2 = data_set2.split('\n')
@@ -38,80 +87,112 @@ def plot_chart(i):
             xar2.append(int(x))
             yar2.append(int(y))
     ax.clear()
-    ax.plot(xar2,yar2,color='tab:blue', label='tx. upload')
     ax.plot(xar1,yar1,color='tab:orange', label='rx. download')
+    ax.plot(xar2,yar2,color='tab:blue', label='tx. upload')
     ax.set_title('Taxas de download e upload do host (bytes/s)')
     ax.set_xlim(0,60)
     ax.legend()
 
-"""
+def plot_chart2(i):
+    ax2.clear()
+    plt.bar([1],totais[0],color='tab:orange')
+    plt.bar([2],totais[1],color='tab:blue')
+    ax2.set_title('Trafego total no host (bytes)')
+    ax2.set_ylim(0,50000000)
+    ax2.yaxis.set_major_formatter(formatter)
+    plt.xticks([1,2], ('Download','Upload'))
 
-    Atualiza data_set do grafico
+class Application:
+    def __init__(self, master=None):
 
-"""
-def update_in_data_set(tx_download, tx_upload):
-    global data_set1
-    global data_set2
-    num_points = len(tx_down_set)
-    if num_points == 60:
-        for i in range(1,num_points-1,1):
-            tx_down_set[i] = tx_down_set[i+1]
-            tx_upld_set[i] = tx_upld_set[i+1]
-            total_down_set[i] = total_down_set[i+1];
-            total_upld_set[i] = total_upld_set[i+1];
-        tx_down_set[len(tx_down_set)-1] = tx_download
-        tx_upld_set[len(tx_upld_set)-1] = tx_upload
-    else:
-        tx_down_set[len(tx_down_set)+1] = tx_download
-        tx_upld_set[len(tx_upld_set)+1] = tx_upload
-    data_set1 = ''
-    data_set2 = ''
-    for i in range(1,num_points,1):
-        data_set1 += str(i) + ',' + str(tx_down_set[i]) + '\n'
-        data_set2 += str(i) + ',' + str(tx_upld_set[i]) + '\n'
+        self.fontePadrao = ("Monospace Regular", "10")
+        self.primeiroContainer = Frame(master)
+        self.primeiroContainer["pady"] = 10
+        self.primeiroContainer.pack()
+  
+        self.segundoContainer = Frame(master)
+        self.segundoContainer["padx"] = 20
+        self.segundoContainer["pady"] = 3
+        self.segundoContainer.pack()
+  
+        self.terceiroContainer = Frame(master)
+        self.terceiroContainer["padx"] = 20
+        self.terceiroContainer["pady"] = 3
+        self.terceiroContainer.pack()
+  
+        self.quintoContainer = Frame(master)
+        self.quintoContainer["padx"] = 20
+        self.quintoContainer["pady"] = 3
+        self.quintoContainer.pack()
 
+        self.quartoContainer = Frame(master)
+        self.quartoContainer["pady"] = 20
+        self.quartoContainer.pack()
+  
+        self.titulo = Label(self.primeiroContainer, text="Dados do agente SNMPv3")
+        self.titulo["font"] = ("Monospace Regular", "10", "bold")
+        self.titulo.pack()
+  
+        self.nomeLabel = Label(self.segundoContainer,text="Usuario", font=self.fontePadrao)
+        self.nomeLabel.pack()
+  
+        self.nome = Entry(self.segundoContainer)
+        self.nome["width"] = 30
+        self.nome["font"] = self.fontePadrao
+        self.nome.pack()
+  
+        self.senhaLabel = Label(self.terceiroContainer, text="Senha", font=self.fontePadrao)
+        self.senhaLabel.pack()
+  
+        self.senha = Entry(self.terceiroContainer)
+        self.senha["width"] = 30
+        self.senha["font"] = self.fontePadrao
+        self.senha["show"] = "*"
+        self.senha.pack()
+  
+        self.ipLabel = Label(self.quintoContainer, text="IP do host", font=self.fontePadrao)
+        self.ipLabel.pack()
+  
+        self.ip = Entry(self.quintoContainer)
+        self.ip["width"] = 30
+        self.ip["font"] = self.fontePadrao
+        self.ip.pack()
 
-"""
-
-  Analisa interfaces de rede
-
-"""
-def analyze_interfaces():
-    countBulk1 = session.get_bulk(['ifInOctets', 'ifOutOctets'], 0, numInterfaces);
-    bytesIn1 = 0;
-    bytesOut1 = 0;
-    for i in range(0,len(countBulk1),2):
-        bytesIn1 += int(countBulk1[i].value)
-        bytesOut1 += int(countBulk1[i+1].value)
-    time.sleep(1)
-    while True:
-        countBulk2 = session.get_bulk(['ifInOctets', 'ifOutOctets'], 0, numInterfaces)
-        bytesIn2 = 0;
-        bytesOut2 = 0;
-        for i in range(0,len(countBulk2),2):
-            bytesIn2 += int(countBulk2[i].value)
-            bytesOut2 += int(countBulk2[i+1].value)
-        global elapsed_time
-        tx_download = bytesIn2 - bytesIn1
-        tx_upload = bytesOut2 - bytesOut1
-        total_down = bytesIn2;
-        total_upld = bytesOut2;
-        update_in_data_set(tx_download, tx_upload)
-        bytesIn1 = bytesIn2
-        bytesOut1 = bytesOut2
-        time.sleep(1)
-
-"""
-
-    Main
-
-"""
-
-t = threading.Thread(target=analyze_interfaces)
-t.start()
+        self.autenticar = Button(self.quartoContainer)
+        self.autenticar["text"] = "Monitorar"
+        self.autenticar["font"] = ("Monospace Regular", "10")
+        self.autenticar["width"] = 12
+        self.autenticar["command"] = self.verificaSenha
+        self.autenticar.pack()
+  
+        self.mensagem = Label(self.quartoContainer, text="", font=self.fontePadrao)
+        self.mensagem.pack()
+  
+    def verificaSenha(self):
+        usuario = self.nome.get()
+        senha = self.senha.get()
+        ip = self.ip.get()
+        try:
+          global session
+          global numInterfaces
+          session = Session(hostname=ip, version=3, security_level='auth_with_privacy', security_username=usuario, auth_protocol='MD5', auth_password=senha, privacy_protocol='DES', privacy_password=senha)
+          numInterfaces = int(session.get('ifNumber.0').value)
+          self.mensagem["text"] = "Autenticado"
+          t = threading.Thread(target=analyze_interfaces)
+          t.start()
+          ani = animation.FuncAnimation(fig, plot_chart, interval = 1000)
+          ani2 = animation.FuncAnimation(fig2, plot_chart2, interval = 1000)
+          plt.show()
+        except:
+          print('Ocorreu um erro. Verifique o que aconteceu.')
+          self.mensagem["text"] = "Falha durante autenticacao"
 
 fig = plt.figure()
+fig.canvas.mpl_connect('close_event', handle_close)
 ax = fig.add_subplot(1,1,1)
-ani = animation.FuncAnimation(fig, plot_chart, interval = 1000)
-plt.show()
-
+fig2, ax2 = plt.subplots()
+formatter = FuncFormatter(megabytes)
+root = Tk()
+root.title("Foo Network Manager")
+app = Application(root)
+root.mainloop()
