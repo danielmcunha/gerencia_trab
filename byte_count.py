@@ -75,30 +75,40 @@ def plot_chart(i):
     xar1 = []
     yar1 = []
     xar2 = []
-    yar2 = []    
+    yar2 = []
+    maxval = 0;
     for eachLine in dataArray1:
         if len(eachLine) > 1:
             x,y = eachLine.split(',')
             xar1.append(int(x))
             yar1.append(int(y))
+            if int(y) > maxval:
+                maxval = int(y)
     for eachLine in dataArray2:
         if len(eachLine) > 1:
             x,y = eachLine.split(',')
             xar2.append(int(x))
             yar2.append(int(y))
+            if int(y) > maxval:
+                maxval = int(y)
     ax.clear()
     ax.plot(xar1,yar1,color='tab:orange', label='rx. download')
     ax.plot(xar2,yar2,color='tab:blue', label='tx. upload')
-    ax.set_title('Taxas de download e upload do host (bytes/s)')
+    ax.set_title('Taxas de download e upload do host (MB/s)')
+    ax.yaxis.set_major_formatter(formatter)
     ax.set_xlim(0,60)
+    if maxval > 500000:
+      ax.set_ylim(0,maxval*2)
+    else:
+      ax.set_ylim(0,500000)
     ax.legend()
 
 def plot_chart2(i):
     ax2.clear()
     plt.bar([1],totais[0],color='tab:orange')
     plt.bar([2],totais[1],color='tab:blue')
-    ax2.set_title('Trafego total no host (bytes)')
-    ax2.set_ylim(0,50000000)
+    ax2.set_title('Trafego total no host (MBytes)')
+    ax2.set_ylim(0,25000000)
     ax2.yaxis.set_major_formatter(formatter)
     plt.xticks([1,2], ('Download','Upload'))
 
