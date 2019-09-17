@@ -108,7 +108,15 @@ def plot_chart2(i):
     plt.bar([1],totais[0],color='tab:orange')
     plt.bar([2],totais[1],color='tab:blue')
     ax2.set_title('Trafego total no host (MBytes)')
-    ax2.set_ylim(0,25000000)
+    if totais[0] > 25000000 or totais[1] > 25000000:
+      maxtotal = 0;
+      if totais[0] > 25000000:
+        maxtotal = totais[0]
+      if totais[1] > 25000000:
+        maxtotal = totais[1]
+      ax2.set_ylim(0,maxtotal*1.5)
+    else:
+      ax.set_ylim(0,25000000)
     ax2.yaxis.set_major_formatter(formatter)
     plt.xticks([1,2], ('Download','Upload'))
 
