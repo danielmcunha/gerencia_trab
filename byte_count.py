@@ -117,7 +117,7 @@ def plot_chart2(i):
         maxtotal = totais[1]
       ax2.set_ylim(0,maxtotal*1.5)
     else:
-      ax.set_ylim(0,25000000)
+      ax2.set_ylim(0,25000000)
     ax2.yaxis.set_major_formatter(formatter)
     plt.xticks([1,2], ('Download','Upload'))
 
