@@ -1,4 +1,5 @@
 from Tkinter import *
+import ttk
 from easysnmp import Session
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -127,54 +128,80 @@ class Application:
         self.primeiroContainer = Frame(master)
         self.primeiroContainer["pady"] = 10
         self.primeiroContainer.pack()
-  
+
         self.segundoContainer = Frame(master)
         self.segundoContainer["padx"] = 20
         self.segundoContainer["pady"] = 3
         self.segundoContainer.pack()
-  
+
         self.terceiroContainer = Frame(master)
         self.terceiroContainer["padx"] = 20
         self.terceiroContainer["pady"] = 3
         self.terceiroContainer.pack()
-  
+
         self.quintoContainer = Frame(master)
         self.quintoContainer["padx"] = 20
         self.quintoContainer["pady"] = 3
         self.quintoContainer.pack()
 
+        self.sextoContainer = Frame(master)
+        self.sextoContainer["padx"] = 20
+        self.sextoContainer["pady"] = 3
+        self.sextoContainer.pack()
+
+        self.setimoContainer = Frame(master)
+        self.setimoContainer["padx"] = 20
+        self.setimoContainer["pady"] = 3
+        self.setimoContainer.pack()
+
         self.quartoContainer = Frame(master)
         self.quartoContainer["pady"] = 20
         self.quartoContainer.pack()
-  
+
         self.titulo = Label(self.primeiroContainer, text="Dados do agente SNMPv3")
         self.titulo["font"] = ("Monospace Regular", "10", "bold")
         self.titulo.pack()
-  
+
         self.nomeLabel = Label(self.segundoContainer,text="Usuario", font=self.fontePadrao)
         self.nomeLabel.pack()
-  
+
         self.nome = Entry(self.segundoContainer)
         self.nome["width"] = 30
         self.nome["font"] = self.fontePadrao
         self.nome.pack()
-  
+
         self.senhaLabel = Label(self.terceiroContainer, text="Senha", font=self.fontePadrao)
         self.senhaLabel.pack()
-  
+
         self.senha = Entry(self.terceiroContainer)
         self.senha["width"] = 30
         self.senha["font"] = self.fontePadrao
         self.senha["show"] = "*"
         self.senha.pack()
-  
+
         self.ipLabel = Label(self.quintoContainer, text="IP do host", font=self.fontePadrao)
         self.ipLabel.pack()
-  
+
         self.ip = Entry(self.quintoContainer)
         self.ip["width"] = 30
         self.ip["font"] = self.fontePadrao
         self.ip.pack()
+
+        self.hashLabel = Label(self.sextoContainer, text="Hash", font=self.fontePadrao)
+        self.hashLabel.pack()
+
+        self.hash = ttk.Combobox(self.sextoContainer, values=["MD5", "SHA"])
+        self.hash["width"] = 30
+        self.hash["font"] = self.fontePadrao
+        self.hash.pack()
+
+        self.encryptionLabel = Label(self.setimoContainer, text="Criptografia", font=self.fontePadrao)
+        self.encryptionLabel.pack()
+
+        self.encryption = ttk.Combobox(self.setimoContainer, values=["AES", "DES"])
+        self.encryption["width"] = 30
+        self.encryption["font"] = self.fontePadrao
+        self.encryption.pack()
 
         self.autenticar = Button(self.quartoContainer)
         self.autenticar["text"] = "Monitorar"
@@ -182,18 +209,20 @@ class Application:
         self.autenticar["width"] = 12
         self.autenticar["command"] = self.verificaSenha
         self.autenticar.pack()
-  
+
         self.mensagem = Label(self.quartoContainer, text="", font=self.fontePadrao)
         self.mensagem.pack()
-  
+
     def verificaSenha(self):
         usuario = self.nome.get()
         senha = self.senha.get()
         ip = self.ip.get()
+        hash = self.hash.get()
+        encryption = self.encryption.get()
         try:
           global session
           global numInterfaces
-          session = Session(hostname=ip, version=3, security_level='auth_with_privacy', security_username=usuario, auth_protocol='MD5', auth_password=senha, privacy_protocol='DES', privacy_password=senha)
+          session = Session(hostname=ip, version=3, security_level='auth_with_privacy', security_username=usuario, auth_protocol=hash, auth_password=senha, privacy_protocol=encryption, privacy_password=senha)
           numInterfaces = int(session.get('ifNumber.0').value)
           self.mensagem["text"] = "Autenticado"
           t = threading.Thread(target=analyze_interfaces)
