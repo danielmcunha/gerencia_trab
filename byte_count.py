@@ -14,6 +14,7 @@ numInterfaces = 0
 tx_down_set = {}
 tx_upld_set = {}
 totais = [0,0]
+cpu = [0,0]
 plotclosed = False
 
 def handle_close(evt):
@@ -36,6 +37,8 @@ def analyze_interfaces():
         if plotclosed:
           break
         countBulk2 = session.get_bulk(['ifInOctets', 'ifOutOctets'], 0, numInterfaces)
+        cpu[0] = float(session.get('laLoad.1').value) * 100
+        cpu[1] = 100
         bytesIn2 = 0;
         bytesOut2 = 0;
         for i in range(0,len(countBulk2),2):
@@ -120,6 +123,13 @@ def plot_chart2(i):
       ax2.set_ylim(0,25000000)
     ax2.yaxis.set_major_formatter(formatter)
     plt.xticks([1,2], ('Download','Upload'))
+
+def plot_chart3(i):
+    ax3.clear()
+    labels = 'Em uso', 'Idle'
+    ax3.pie(cpu,labels=labels,autopct='%1.1f%%',shadow=True,startangle=90)
+    ax3.set_title('Uso da CPU no host (%)')
+    ax3.axis('equal')
 
 class Application:
     def __init__(self, master=None):
@@ -229,6 +239,7 @@ class Application:
           t.start()
           ani = animation.FuncAnimation(fig, plot_chart, interval = 1000)
           ani2 = animation.FuncAnimation(fig2, plot_chart2, interval = 1000)
+          ani3 = animation.FuncAnimation(fig3, plot_chart3, interval = 1000)
           plt.show()
         except:
           print('Ocorreu um erro. Verifique o que aconteceu.')
@@ -238,6 +249,7 @@ fig = plt.figure()
 fig.canvas.mpl_connect('close_event', handle_close)
 ax = fig.add_subplot(1,1,1)
 fig2, ax2 = plt.subplots()
+fig3, ax3 = plt.subplots()
 formatter = FuncFormatter(megabytes)
 root = Tk()
 root.title("Foo Network Manager")
