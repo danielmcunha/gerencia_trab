@@ -127,7 +127,7 @@ def plot_chart2(i):
 def plot_chart3(i):
     ax3.clear()
     labels = 'Em uso', 'Idle'
-    ax3.pie(cpu,labels=labels,autopct='%1.1f%%',shadow=True,startangle=90)
+    ax3.pie(cpu,labels=labels,autopct='%1.1f%%',shadow=False,startangle=90)
     ax3.set_title('Uso da CPU no host (%)')
     ax3.axis('equal')
 
